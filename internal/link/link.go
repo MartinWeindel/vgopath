@@ -242,7 +242,16 @@ func linkNode(dir string, node Node) error {
 		srcDir := node.Module.Dir
 
 		if err := os.Symlink(srcDir, dstDir); err != nil {
-			return fmt.Errorf("error symlinking node: %w", err)
+			if os.IsExist(err) {
+				if err := os.Remove(dstDir); err != nil {
+					return fmt.Errorf("removing existing symlink failed: %w", err)
+				}
+				if err := os.Symlink(srcDir, dstDir); err != nil {
+					return fmt.Errorf("error forced symlinking node: %w", err)
+				}
+			} else {
+				return fmt.Errorf("error symlinking node: %w", err)
+			}
 		}
 	}
 
